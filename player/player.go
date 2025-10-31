@@ -25,7 +25,7 @@ func (p *Player) Play(broadcasterLogin string) error {
 	var cmd *exec.Cmd
 	cmd = exec.Command("ffplay",
 		"-vf", fmt.Sprintf("scale=%d:%d", p.Cfg.Player.StreamWidth, p.Cfg.Player.StreamHeight),
-		"-window_title", "fst",
+		"-window_title", "Pocketstream",
 		"-autoexit",
 		"-x", strconv.Itoa(p.Cfg.Player.StreamWidth),
 		"-y", strconv.Itoa(p.Cfg.Player.StreamHeight),

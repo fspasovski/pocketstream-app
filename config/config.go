@@ -93,7 +93,7 @@ type PlayerConfig struct {
 
 func Load() *Config {
 	return &Config{
-		AppName:    "Fst",
+		AppName:    "Pocketstream",
 		AppVersion: "v1.0.0",
 		Display: DisplayConfig{
 			Width:  640,

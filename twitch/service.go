@@ -351,7 +351,7 @@ func (s *TwitchService) getTopChannelsGqlRequest(limit int) (*bytes.Buffer, erro
 				RecommendationsContext: &GqlRequestRecommendationsContext{
 					Platform: "web",
 				},
-				RequestId:            "fst",
+				RequestId:            "pocketstream-app",
 				BroadcasterLanguages: []string{},
 			},
 			SortTypeIsRecency: false,

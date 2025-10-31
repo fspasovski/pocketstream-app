@@ -47,7 +47,7 @@ func main() {
 	}
 	defer font.Close()
 
-	window, err := sdl.CreateWindow("fst", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, cfg.Display.Width, cfg.Display.Height, sdl.WINDOW_SHOWN)
+	window, err := sdl.CreateWindow("Pocketstream", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, cfg.Display.Width, cfg.Display.Height, sdl.WINDOW_SHOWN)
 	if err != nil {
 		log.Fatalf("Failed to create window: %v", err)
 	}
