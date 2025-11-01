@@ -12,17 +12,18 @@ docker build --platform linux/arm64 -t $IMAGE_NAME .
 echo "Extracting binary from Docker image..."
 CONTAINER_ID=$(docker create --platform linux/arm64 $IMAGE_NAME)
 
-BUILD_PATH=mnt/mmc/MUOS/application/Pocketstream
-mkdir -p $BUILD_PATH
+MNT_BUILD_PATH=mnt/mmc/MUOS/application/Pocketstream
+mkdir -p $MNT_BUILD_PATH
 
-docker cp $CONTAINER_ID:/app/pocketstream-app $BUILD_PATH/$OUTPUT_BINARY
+docker cp $CONTAINER_ID:/app/pocketstream-app $MNT_BUILD_PATH/$OUTPUT_BINARY
 docker rm $CONTAINER_ID
-cp ./font.ttf $BUILD_PATH/font.ttf
+cp ./font.ttf $MNT_BUILD_PATH/font.ttf
 
 # Create muOS launcher script
-cat > "$BUILD_PATH/mux_launch.sh" << 'EOF'
+cat > "$MNT_BUILD_PATH/mux_launch.sh" << 'EOF'
 #!/bin/sh
 # HELP: Pocketstream
+# ICON: pocketstream
 # GRID: Pocketstream
 
 . /opt/muos/script/var/func.sh
@@ -48,16 +49,16 @@ unset SDL_ASSERT SDL_HQ_SCALER SDL_ROTATION SDL_BLITTER_DISABLED
 EOF
 
 # Create muOS ini file
-cat > "$BUILD_PATH/mux_launch.ini" << 'EOF'
+cat > "$MNT_BUILD_PATH/mux_launch.ini" << 'EOF'
 [Application]
 Name = Pocketstream
 Exec = mux_launch.sh
-Icon = glyph/app_icon.png
+Icon = pocketstream
 Category = Media
 EOF
 
 # Create muOS lang file
-cat > "$BUILD_PATH/mux_lang" << 'EOF'
+cat > "$MNT_BUILD_PATH/mux_lang" << 'EOF'
 [full]
 English=Pocketstream
 Polish=Pocketstream
@@ -71,14 +72,16 @@ English=Lightweight and open-source Twitch client that lets you browse and watch
 Polish=Lekki i otwartoźródłowy klient Twitch, który pozwala przeglądać i oglądać transmisje na żywo.
 EOF
 
-chmod +x "$BUILD_PATH/mux_launch.sh"
+chmod +x "$MNT_BUILD_PATH/mux_launch.sh"
 
-mkdir $BUILD_PATH/glyph
-cp ./app_icon.png $BUILD_PATH/glyph/
 
-zip -r Pocketstream.zip mnt
+OPT_BUILD_PATH=opt/muos/default/MUOS/theme/active/glyph/muxapp
+mkdir -p $OPT_BUILD_PATH
+cp ./pocketstream.png $OPT_BUILD_PATH
+
+zip -r Pocketstream.zip mnt opt
 mv Pocketstream.zip Pocketstream.muxzip
 
 echo "Build complete!"
 rm -r mnt
-
+rm -r opt
