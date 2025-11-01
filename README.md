@@ -60,6 +60,7 @@ go run main.go
 
 ### Build for Anbernic RG35XX
 This will generate the `Pocketstream` folder, ready to be transferred on your device.
+It uses a Docker container in order to build the app for the target platform.
 ```bash
 ./build.sh
 ```
@@ -73,3 +74,15 @@ This will generate the `Pocketstream` folder, ready to be transferred on your de
   <img src="search-screen.png" width="45%" alt="Stream view"/>
 </p>
 
+## 🧡 Support My Work
+
+If you enjoy **PocketStream** and want to support future updates and projects,  
+you can **buy me a coffee** here:
+
+👉 [**buymeacoffee.com/fspasovski**](https://buymeacoffee.com/fspasovski)
+
+<p align="center">
+  <a href="https://buymeacoffee.com/fspasovski" target="_blank">
+    <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" width="200" />
+  </a>
+</p>
