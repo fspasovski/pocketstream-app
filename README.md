@@ -31,6 +31,41 @@ PocketStream is designed to run efficiently on low-power or handheld Linux-based
 
 ---
 
+## 💾 Download & Install on Anbernic RG35XX
+
+A prebuilt release of **PocketStream** for the Anbernic RG35XX is available on GitHub:
+
+1. Go to the [Releases page](https://github.com/fspasovski/pocketstream-app/releases/tag/rg35xx).
+2. Download the latest **zip archive** for RG35XX.
+3. Unzip the archive on your computer
+4. Copy the `Pocketstream` folder to `/mnt/mmc/MUOS/application` on your device
+5. Run the app through the `Applications` menu
+
+---
+
+## 🚀 Development
+
+### Requirements
+- Go 1.23+
+- SDL2 development libraries
+- FFmpeg (for `ffplay` playback)
+
+### Clone & Run
+
+```bash
+git clone git@github.com:fspasovski/pocketstream-app.git
+cd pocketstream-app
+go run main.go
+```
+
+### Build for Anbernic RG35XX
+This will generate the `Pocketstream` folder, ready to be transferred on your device.
+```bash
+./build.sh
+```
+
+---
+
 ## 🖼️ Screenshots
 
 <p align="center">
