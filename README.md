@@ -35,7 +35,7 @@ PocketStream is designed to run efficiently on low-power or handheld Linux-based
 
 A prebuilt release of **PocketStream** for the Anbernic RG35XX is available on GitHub:
 
-1. Go to the [Releases page](https://github.com/fspasovski/pocketstream-app/releases/tag/rg35xx).
+1. Go to the [Releases page](https://github.com/fspasovski/pocketstream-app/releases).
 2. Download the latest **.muxzip archive** for RG35XX.
 3. Copy the `Pocketstream.muxzip` archive to `/mnt/mmc/ARCHIVE` on your device
 4. Open the `Pocketstream.muxzip` through the `Archive Manager` application
