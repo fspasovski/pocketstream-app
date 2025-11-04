@@ -137,7 +137,7 @@ func Load(screenWidth, screenHeight int) *Config {
 				LiveBadgeHeight:       int32(float32(screenHeight) * 0.063),
 				LiveBadgeLeftMargin:   14,
 				LiveBadgeTopMargin:    11,
-				MaxTitleLength:        50,
+				MaxTitleLength:        40,
 				TitleLeftMargin:       thumbnailWidth + 20,
 				TitleTopMargin:        profilePictureSize + 20,
 			},
