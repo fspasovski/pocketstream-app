@@ -131,7 +131,7 @@ func (s *SearchScreen) Draw(app *app.App) {
 
 func drawInputBox(app *app.App, s *SearchScreen) {
 	inset := app.Config.UI.InputBoxPadding
-	box := sdl.Rect{X: inset, Y: inset, W: app.Config.Display.Width - 2*inset, H: app.Config.UI.InputBoxHeight}
+	box := sdl.Rect{X: inset, Y: app.Config.UI.InputBoxTopMargin, W: app.Config.Display.Width - 2*inset, H: app.Config.UI.InputBoxHeight}
 
 	// border
 	app.DrawRect(&box, app.Config.UI.Colors.InputBoxBorderColor)

@@ -78,6 +78,7 @@ type UIConfig struct {
 	StreamsTopMargin  int32
 	StreamLeftMargin  int32
 	StreamTopMargin   int32
+	InputBoxTopMargin int32
 	InputBoxHeight    int32
 	InputBoxPadding   int32
 	KeyboardTopMargin int32
@@ -98,6 +99,10 @@ type PlayerConfig struct {
 func Load(screenWidth, screenHeight int) *Config {
 	thumbnailWidth := int32(float32(screenWidth) * 0.3)
 	profilePictureSize := int32(float32(screenHeight) * 0.104)
+	headerHeight := int32(float32(screenHeight) * 0.104)
+	inputBoxTopMargin := headerHeight + 50
+	inputBoxHeight := int32(float32(screenHeight) * 0.075)
+
 	return &Config{
 		AppName:    "Pocketstream",
 		AppVersion: "v1.0.2",
@@ -145,14 +150,15 @@ func Load(screenWidth, screenHeight int) *Config {
 			StreamsTopMargin:  20,
 			StreamLeftMargin:  10,
 			StreamTopMargin:   130,
-			InputBoxHeight:    36,
+			InputBoxHeight:    inputBoxHeight,
 			InputBoxPadding:   60,
-			KeyboardTopMargin: 140,
-			KeyWidth:          36,
-			KeyHeight:         27,
-			KeySpacingX:       8,
-			KeySpacingY:       8,
-			VirtualTopPadding: 20,
+			InputBoxTopMargin: inputBoxTopMargin,
+			KeyboardTopMargin: inputBoxTopMargin + inputBoxHeight + 20,
+			KeyWidth:          int32(float32(screenWidth) * 0.056),
+			KeyHeight:         int32(float32(screenHeight) * 0.056),
+			KeySpacingX:       int32(float32(screenWidth) * 0.0125),
+			KeySpacingY:       int32(float32(screenHeight) * 0.017),
+			VirtualTopPadding: int32(float32(screenHeight) * 0.042),
 			Colors: Colors{
 				BackgroundColor:                sdl.Color{15, 23, 42, 255},
 				HeaderBackgroundColor:          sdl.Color{30, 58, 138, 255},

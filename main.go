@@ -44,7 +44,7 @@ func main() {
 	}
 
 	windowWidth := displayMode.W
-	windowHeight := int32(float32(displayMode.H) * 0.93)
+	windowHeight := displayMode.H
 
 	cfg := config.Load(int(windowWidth), int(windowHeight))
 
