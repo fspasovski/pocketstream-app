@@ -100,7 +100,7 @@ func Load(screenWidth, screenHeight int) *Config {
 	profilePictureSize := int32(float32(screenHeight) * 0.104)
 	return &Config{
 		AppName:    "Pocketstream",
-		AppVersion: "v1.0.1",
+		AppVersion: "v1.0.2",
 		Display: DisplayConfig{
 			Width:  int32(screenWidth),
 			Height: int32(screenHeight),
