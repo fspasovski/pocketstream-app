@@ -105,7 +105,7 @@ func Load(screenWidth, screenHeight int) *Config {
 
 	return &Config{
 		AppName:    "Pocketstream",
-		AppVersion: "v1.0.2",
+		AppVersion: "v1.0.3",
 		Display: DisplayConfig{
 			Width:  int32(screenWidth),
 			Height: int32(screenHeight),
