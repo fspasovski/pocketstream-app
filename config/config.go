@@ -50,18 +50,22 @@ type Colors struct {
 }
 
 type StreamsUiConfig struct {
-	ThumbnailWidth      int32
-	ThumbnailHeight     int32
-	ProfilePictureSize  int32
-	InfoTextX           int32
-	Padding             int32
-	RowHeight           int32
-	LiveBadgeWidth      int32
-	LiveBadgeHeight     int32
-	LiveBadgeLeftMargin int32
-	LiveBadgeTopMargin  int32
-	LiveTextLeftMargin  int32
-	LiveTextTopMargin   int32
+	Width                 int32
+	ThumbnailWidth        int32
+	ThumbnailHeight       int32
+	ProfilePictureSize    int32
+	ProfileInfoLeftMargin int32
+	ProfileInfoTopMargin  int32
+	ProfileNameLeftMargin int32
+	TitleLeftMargin       int32
+	TitleTopMargin        int32
+	MaxTitleLength        int
+	Padding               int32
+	Height                int32
+	LiveBadgeWidth        int32
+	LiveBadgeHeight       int32
+	LiveBadgeLeftMargin   int32
+	LiveBadgeTopMargin    int32
 }
 
 type UIConfig struct {
@@ -91,13 +95,15 @@ type PlayerConfig struct {
 	StreamHeight int
 }
 
-func Load() *Config {
+func Load(screenWidth, screenHeight int) *Config {
+	thumbnailWidth := int32(float32(screenWidth) * 0.3)
+	profilePictureSize := int32(float32(screenHeight) * 0.104)
 	return &Config{
 		AppName:    "Pocketstream",
-		AppVersion: "v1.0.0",
+		AppVersion: "v1.0.1",
 		Display: DisplayConfig{
-			Width:  640,
-			Height: 480,
+			Width:  int32(screenWidth),
+			Height: int32(screenHeight),
 		},
 		TwitchService: &twitch.TwitchService{
 			Config: twitch.TwitchConfig{
@@ -113,26 +119,30 @@ func Load() *Config {
 		},
 		UI: UIConfig{
 			StreamsUiConfig: StreamsUiConfig{
-				ThumbnailWidth:      200,
-				ThumbnailHeight:     112,
-				Padding:             5,
-				RowHeight:           116,
-				InfoTextX:           210,
-				ProfilePictureSize:  32,
-				LiveBadgeWidth:      43,
-				LiveBadgeHeight:     22,
-				LiveBadgeLeftMargin: 14,
-				LiveBadgeTopMargin:  11,
-				LiveTextLeftMargin:  17,
-				LiveTextTopMargin:   13,
+				Width:                 int32(float32(screenWidth) * 0.969),
+				Height:                int32(float32(screenHeight) * 0.25),
+				ThumbnailWidth:        thumbnailWidth,
+				ThumbnailHeight:       int32(float32(screenHeight) * 0.24),
+				Padding:               5,
+				ProfileInfoLeftMargin: thumbnailWidth + 10,
+				ProfileInfoTopMargin:  10,
+				ProfileNameLeftMargin: 10,
+				ProfilePictureSize:    profilePictureSize,
+				LiveBadgeWidth:        int32(float32(screenWidth) * 0.08),
+				LiveBadgeHeight:       int32(float32(screenHeight) * 0.063),
+				LiveBadgeLeftMargin:   14,
+				LiveBadgeTopMargin:    11,
+				MaxTitleLength:        50,
+				TitleLeftMargin:       thumbnailWidth + 20,
+				TitleTopMargin:        profilePictureSize + 20,
 			},
-			HeaderHeight:      40,
-			FooterHeight:      22,
+			HeaderHeight:      int32(float32(screenHeight) * 0.104),
+			FooterHeight:      int32(float32(screenHeight) * 0.083),
 			RowHeight:         130,
 			FontPath:          "font.ttf",
-			FontSize:          16,
+			FontSize:          int(float32(screenHeight) * 0.040),
 			Padding:           5,
-			StreamsTopMargin:  64,
+			StreamsTopMargin:  20,
 			StreamLeftMargin:  10,
 			StreamTopMargin:   130,
 			InputBoxHeight:    36,
@@ -172,8 +182,8 @@ func Load() *Config {
 			},
 		},
 		Player: PlayerConfig{
-			StreamWidth:  640,
-			StreamHeight: 480,
+			StreamWidth:  screenWidth,
+			StreamHeight: screenHeight,
 		},
 	}
 }

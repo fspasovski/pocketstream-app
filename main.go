@@ -16,8 +16,6 @@ import (
 )
 
 func main() {
-	cfg := config.Load()
-
 	if err := sdl.Init(sdl.INIT_VIDEO | sdl.INIT_EVENTS); err != nil {
 		log.Fatalf("Failed to init SDL: %v", err)
 	}
@@ -40,6 +38,15 @@ func main() {
 			defer controller.Close()
 		}
 	}
+	displayMode, err := sdl.GetDesktopDisplayMode(0)
+	if err != nil {
+		log.Fatalf("Could not get desktop display mode: %v", err)
+	}
+
+	windowWidth := displayMode.W
+	windowHeight := int32(float32(displayMode.H) * 0.93)
+
+	cfg := config.Load(int(windowWidth), int(windowHeight))
 
 	font, err := ttf.OpenFont(cfg.UI.FontPath, cfg.UI.FontSize)
 	if err != nil {
@@ -47,7 +54,7 @@ func main() {
 	}
 	defer font.Close()
 
-	window, err := sdl.CreateWindow("Pocketstream", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, cfg.Display.Width, cfg.Display.Height, sdl.WINDOW_SHOWN)
+	window, err := sdl.CreateWindow("Pocketstream", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, windowWidth, windowHeight, sdl.WINDOW_SHOWN)
 	if err != nil {
 		log.Fatalf("Failed to create window: %v", err)
 	}
