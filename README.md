@@ -21,22 +21,10 @@ It lets you browse and watch live Twitch streams without needing to log in.
 
 ---
 
-## 💻 Supported Devices
-
-PocketStream is designed to run efficiently on low-power or handheld Linux-based systems.
-
-| Device | Status | Notes |
-|:--------|:--------:|:------|
-| **Anbernic RG35XX** | ✅ Supported | Optimized for 640×480 resolution |
-
----
-
-## 💾 Download & Install on Anbernic RG35XX
-
-A prebuilt release of **PocketStream** for the Anbernic RG35XX is available on GitHub:
+## 💾 Download & Install
 
 1. Go to the [Releases page](https://github.com/fspasovski/pocketstream-app/releases).
-2. Download the latest **.muxzip archive** for RG35XX.
+2. Download the latest **.muxzip archive**.
 3. Copy the `Pocketstream.muxzip` archive to `/mnt/mmc/ARCHIVE` on your device
 4. Open the `Pocketstream.muxzip` through the `Archive Manager` application
 
@@ -57,7 +45,7 @@ cd pocketstream-app
 go run main.go
 ```
 
-### Build for Anbernic RG35XX
+### Build for aarch64
 This will generate the `Pocketstream` folder, ready to be transferred on your device.
 It uses a Docker container in order to build the app for the target platform.
 ```bash
