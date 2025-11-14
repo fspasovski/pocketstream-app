@@ -5,10 +5,12 @@ import (
 	"log"
 
 	"github.com/fspasovski/pocketstream-app/app"
+	"github.com/fspasovski/pocketstream-app/common"
 	"github.com/fspasovski/pocketstream-app/config"
 	"github.com/fspasovski/pocketstream-app/input"
 	"github.com/fspasovski/pocketstream-app/model"
 	"github.com/fspasovski/pocketstream-app/player"
+	"github.com/fspasovski/pocketstream-app/pocketstream"
 	"github.com/fspasovski/pocketstream-app/ui"
 	"github.com/veandco/go-sdl2/img"
 	"github.com/veandco/go-sdl2/sdl"
@@ -54,6 +56,12 @@ func main() {
 	}
 	defer font.Close()
 
+	footerFont, err := ttf.OpenFont(cfg.UI.FontPath, cfg.UI.FooterFontSize)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer footerFont.Close()
+
 	window, err := sdl.CreateWindow("Pocketstream", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, windowWidth, windowHeight, sdl.WINDOW_SHOWN)
 	if err != nil {
 		log.Fatalf("Failed to create window: %v", err)
@@ -81,17 +89,23 @@ func main() {
 	}
 
 	mediaPlayer := &player.Player{Cfg: cfg, BroadcasterStreamingUrls: make(map[string]string)}
+	userDataManager := app.LoadUserDataManager()
+
 	app := &app.App{
-		Running:     true,
-		State:       ui.CreateMainScreen(mediaPlayer),
-		TopStreams:  make([]model.Stream, 0),
-		Window:      window,
-		Renderer:    renderer,
-		Font:        font,
-		NeedsRedraw: true,
-		IsLoading:   false,
-		LoadingText: "",
-		Config:      cfg,
+		Running:             true,
+		State:               ui.CreateMainScreen(mediaPlayer),
+		TopStreams:          make([]model.Stream, 0),
+		Window:              window,
+		Renderer:            renderer,
+		Font:                font,
+		FooterFont:          footerFont,
+		NeedsRedraw:         true,
+		IsLoading:           false,
+		LoadingText:         "",
+		Config:              cfg,
+		UserDataManager:     userDataManager,
+		PocketstreamService: pocketstream.NewPocketstreamService(cfg),
+		ImageDataService:    common.NewImageDataService(),
 	}
 
 	app.LoadTopStreams()
@@ -120,6 +134,8 @@ func main() {
 
 		app.Draw()
 	}
+
+	userDataManager.SaveData()
 }
 
 func initJoystick() *sdl.Joystick {

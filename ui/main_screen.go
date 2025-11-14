@@ -32,6 +32,10 @@ func (s *MainScreen) HandleInput(appState *app.App, key input.Key) {
 		s.handleKeyB(appState)
 	case input.X:
 		s.handleKeyX(appState)
+	case input.Y:
+		s.handleKeyY(appState)
+	case input.Right:
+		s.handleKeyRight(appState)
 	}
 }
 
@@ -99,4 +103,19 @@ func (s *MainScreen) Draw(app *app.App) {
 	}
 
 	DrawStreams(app, app.TopStreams, s.PageStartIndex, s.PageEndIndex, s.SelectedStream)
+}
+
+func (s *MainScreen) handleKeyRight(app *app.App) {
+	app.StartLoading("Loading favorite streams...")
+	go func() {
+		app.State = CreateFavoriteBroadcastersScreen(app, s.Player)
+		app.FinishLoading()
+		app.NeedsRedraw = true
+	}()
+}
+
+func (s *MainScreen) handleKeyY(app *app.App) {
+	if len(app.TopStreams) > 0 {
+		app.UserDataManager.ToggleFavoriteBroadcaster(app.TopStreams[s.SelectedStream].Broadcaster)
+	}
 }

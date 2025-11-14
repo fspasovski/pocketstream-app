@@ -39,6 +39,16 @@ func (s *SearchResultsScreen) HandleInput(appState *app.App, key input.Key) {
 		s.handleKeyB(appState)
 	case input.X:
 		appState.State = s.handleKeyX(appState)
+	case input.Y:
+		s.handleKeyY(appState)
+	case input.Left:
+		s.handleKeyLeft(appState)
+	}
+}
+
+func (s *SearchResultsScreen) handleKeyY(appState *app.App) {
+	if len(s.Streams) > 0 {
+		appState.UserDataManager.ToggleFavoriteBroadcaster(s.Streams[s.SelectedStream].Broadcaster)
 	}
 }
 
@@ -104,4 +114,13 @@ func (s *SearchResultsScreen) Draw(app *app.App) {
 	}
 
 	DrawStreams(app, s.Streams, s.PageStartIndex, s.PageEndIndex, s.SelectedStream)
+}
+
+func (s *SearchResultsScreen) handleKeyLeft(app *app.App) {
+	app.StartLoading("Loading favorite streams...")
+	go func() {
+		app.State = CreateFavoriteBroadcastersScreen(app, s.Player)
+		app.FinishLoading()
+		app.NeedsRedraw = true
+	}()
 }

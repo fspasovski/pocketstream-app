@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"math"
 
 	"github.com/fspasovski/pocketstream-app/app"
 	"github.com/fspasovski/pocketstream-app/model"
@@ -154,6 +155,16 @@ func drawStream(stream *model.Stream, app *app.App, x int32, y int32, selected b
 		}
 	}
 
+	if app.UserDataManager.IsFavoriteBroadcaster(stream.Broadcaster) {
+		drawFilledStar(
+			app,
+			app.Config.Display.Width-app.Config.UI.StreamsUiConfig.FavoriteIconRightMargin,
+			y+app.Config.UI.StreamsUiConfig.FavoriteIconTopMargin,
+			app.Config.UI.StreamsUiConfig.FavoriteIconSize,
+			app.Config.UI.Colors.FavoriteIconColor,
+		)
+	}
+
 	// Draw stream title (gray, truncated if needed)
 	app.Font.SetStyle(ttf.STYLE_NORMAL)
 	truncatedTitle := truncateText(stream.Title, app.Config.UI.StreamsUiConfig.MaxTitleLength)
@@ -193,4 +204,173 @@ func truncateText(text string, maxLen int) string {
 		return text
 	}
 	return text[:maxLen-3] + "..."
+}
+
+func drawFilledStar(app *app.App, centerX, centerY, size int32, color sdl.Color) {
+	// Calculate star points
+	points := make([]sdl.Point, 11) // 10 points + 1 to close the shape
+
+	outerRadius := float64(size)
+	innerRadius := outerRadius * 0.4 // Inner radius is 40% of outer radius
+
+	for i := 0; i < 10; i++ {
+		angle := float64(i)*math.Pi/5.0 - math.Pi/2.0 // Start from top
+
+		var radius float64
+		if i%2 == 0 {
+			radius = outerRadius // Outer point
+		} else {
+			radius = innerRadius // Inner point
+		}
+
+		x := centerX + int32(radius*math.Cos(angle))
+		y := centerY + int32(radius*math.Sin(angle))
+
+		points[i] = sdl.Point{X: x, Y: y}
+	}
+	points[10] = points[0] // Close the shape
+
+	// Fill the star using scanline algorithm
+	// First, set the draw color
+
+	// Draw filled triangles from center to create a filled star
+	for i := 0; i < 10; i++ {
+		drawFilledTriangle(
+			app,
+			centerX, centerY,
+			points[i].X, points[i].Y,
+			points[i+1].X, points[i+1].Y,
+			color,
+		)
+	}
+}
+
+// drawFilledTriangle draws a filled triangle using scanline algorithm
+func drawFilledTriangle(app *app.App, x1, y1, x2, y2, x3, y3 int32, color sdl.Color) {
+	// Sort vertices by Y coordinate (y1 <= y2 <= y3)
+	if y1 > y2 {
+		x1, x2 = x2, x1
+		y1, y2 = y2, y1
+	}
+	if y1 > y3 {
+		x1, x3 = x3, x1
+		y1, y3 = y3, y1
+	}
+	if y2 > y3 {
+		x2, x3 = x3, x2
+		y2, y3 = y3, y2
+	}
+
+	// Handle degenerate cases
+	if y1 == y3 {
+		return
+	}
+
+	// Scanline fill
+	for y := y1; y <= y3; y++ {
+		var xStart, xEnd int32
+
+		if y < y2 {
+			// Upper part of triangle
+			if y2 != y1 {
+				xStart = x1 + (x2-x1)*(y-y1)/(y2-y1)
+			} else {
+				xStart = x1
+			}
+			if y3 != y1 {
+				xEnd = x1 + (x3-x1)*(y-y1)/(y3-y1)
+			} else {
+				xEnd = x1
+			}
+		} else {
+			// Lower part of triangle
+			if y3 != y2 {
+				xStart = x2 + (x3-x2)*(y-y2)/(y3-y2)
+			} else {
+				xStart = x2
+			}
+			if y3 != y1 {
+				xEnd = x1 + (x3-x1)*(y-y1)/(y3-y1)
+			} else {
+				xEnd = x1
+			}
+		}
+
+		if xStart > xEnd {
+			xStart, xEnd = xEnd, xStart
+		}
+
+		app.DrawLine(xStart, y, xEnd, y, color)
+	}
+}
+
+// drawStarOutline draws just the outline of a star (lighter weight alternative)
+func drawStarOutline(app *app.App, centerX, centerY, size int32, color sdl.Color, thickness int32) {
+	points := make([]sdl.Point, 11)
+
+	outerRadius := float64(size)
+	innerRadius := outerRadius * 0.4
+
+	for i := 0; i < 10; i++ {
+		angle := float64(i)*math.Pi/5.0 - math.Pi/2.0
+
+		var radius float64
+		if i%2 == 0 {
+			radius = outerRadius
+		} else {
+			radius = innerRadius
+		}
+
+		x := centerX + int32(radius*math.Cos(angle))
+		y := centerY + int32(radius*math.Sin(angle))
+
+		points[i] = sdl.Point{X: x, Y: y}
+	}
+	points[10] = points[0]
+
+	// Draw multiple lines for thickness
+	for t := int32(0); t < thickness; t++ {
+		for i := 0; i < 10; i++ {
+			app.DrawLine(points[i].X, points[i].Y+t, points[i+1].X, points[i+1].Y+t, color)
+			app.DrawLine(points[i].X+t, points[i].Y, points[i+1].X+t, points[i+1].Y, color)
+		}
+	}
+}
+
+// Example usage in your drawStream function:
+func exampleUsageInDrawStream() {
+	/*
+		// Add this to your drawStream function, after drawing the thumbnail:
+
+		// Check if broadcaster is a favorite
+		if app.Config.IsFavorite(stream.Broadcaster.Login) {
+			// Position star in top-right corner of thumbnail
+			starX := x + app.Config.UI.StreamsUiConfig.ThumbnailWidth - 32
+			starY := y + 20
+			starSize := int32(12) // Size of the star
+
+			// Gold color for the star
+			goldColor := sdl.Color{R: 255, G: 215, B: 0, A: 255}
+
+			// Optional: Draw a dark background circle for better visibility
+			drawFilledCircle(app.Renderer, starX, starY, starSize+4,
+				sdl.Color{R: 0, G: 0, B: 0, A: 180})
+
+			// Draw the star
+			drawFilledStar(app.Renderer, starX, starY, starSize, goldColor)
+		}
+	*/
+}
+
+// Bonus: Helper function to draw a filled circle (for star background)
+func drawFilledCircle(renderer *sdl.Renderer, centerX, centerY, radius int32, color sdl.Color) {
+	renderer.SetDrawColor(color.R, color.G, color.B, color.A)
+
+	for y := -radius; y <= radius; y++ {
+		for x := -radius; x <= radius; x++ {
+			if x*x+y*y <= radius*radius {
+				renderer.DrawPoint(centerX+x, centerY+y)
+			}
+		}
+	}
 }

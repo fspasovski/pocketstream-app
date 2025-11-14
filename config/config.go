@@ -8,12 +8,13 @@ import (
 )
 
 type Config struct {
-	AppName       string
-	AppVersion    string
-	Display       DisplayConfig
-	TwitchService *twitch.TwitchService
-	UI            UIConfig
-	Player        PlayerConfig
+	AppName            string
+	AppVersion         string
+	Display            DisplayConfig
+	TwitchService      *twitch.TwitchService
+	UI                 UIConfig
+	Player             PlayerConfig
+	PocketstreamApiUrl string
 }
 
 type DisplayConfig struct {
@@ -47,25 +48,29 @@ type Colors struct {
 	StreamerNameTextColor          sdl.Color
 	StreamTitleColor               sdl.Color
 	SelectedStreamBorderColor      sdl.Color
+	FavoriteIconColor              sdl.Color
 }
 
 type StreamsUiConfig struct {
-	Width                 int32
-	ThumbnailWidth        int32
-	ThumbnailHeight       int32
-	ProfilePictureSize    int32
-	ProfileInfoLeftMargin int32
-	ProfileInfoTopMargin  int32
-	ProfileNameLeftMargin int32
-	TitleLeftMargin       int32
-	TitleTopMargin        int32
-	MaxTitleLength        int
-	Padding               int32
-	Height                int32
-	LiveBadgeWidth        int32
-	LiveBadgeHeight       int32
-	LiveBadgeLeftMargin   int32
-	LiveBadgeTopMargin    int32
+	Width                   int32
+	ThumbnailWidth          int32
+	ThumbnailHeight         int32
+	ProfilePictureSize      int32
+	ProfileInfoLeftMargin   int32
+	ProfileInfoTopMargin    int32
+	ProfileNameLeftMargin   int32
+	TitleLeftMargin         int32
+	TitleTopMargin          int32
+	MaxTitleLength          int
+	Padding                 int32
+	Height                  int32
+	LiveBadgeWidth          int32
+	LiveBadgeHeight         int32
+	LiveBadgeLeftMargin     int32
+	LiveBadgeTopMargin      int32
+	FavoriteIconSize        int32
+	FavoriteIconTopMargin   int32
+	FavoriteIconRightMargin int32
 }
 
 type UIConfig struct {
@@ -74,6 +79,7 @@ type UIConfig struct {
 	RowHeight         int32
 	FontPath          string
 	FontSize          int
+	FooterFontSize    int
 	Padding           int32
 	StreamsTopMargin  int32
 	StreamLeftMargin  int32
@@ -99,13 +105,15 @@ type PlayerConfig struct {
 func Load(screenWidth, screenHeight int) *Config {
 	thumbnailWidth := int32(float32(screenWidth) * 0.3)
 	profilePictureSize := int32(float32(screenHeight) * 0.104)
+	favoriteIconSize := int32(float32(screenHeight)*0.104) / 3
 	headerHeight := int32(float32(screenHeight) * 0.104)
 	inputBoxTopMargin := headerHeight + 50
 	inputBoxHeight := int32(float32(screenHeight) * 0.075)
 
 	return &Config{
-		AppName:    "Pocketstream",
-		AppVersion: "v1.0.3",
+		AppName:            "Pocketstream",
+		AppVersion:         "v1.1.0",
+		PocketstreamApiUrl: "https://pocketstream.app/api",
 		Display: DisplayConfig{
 			Width:  int32(screenWidth),
 			Height: int32(screenHeight),
@@ -124,28 +132,32 @@ func Load(screenWidth, screenHeight int) *Config {
 		},
 		UI: UIConfig{
 			StreamsUiConfig: StreamsUiConfig{
-				Width:                 int32(float32(screenWidth) * 0.969),
-				Height:                int32(float32(screenHeight) * 0.25),
-				ThumbnailWidth:        thumbnailWidth,
-				ThumbnailHeight:       int32(float32(screenHeight) * 0.24),
-				Padding:               5,
-				ProfileInfoLeftMargin: thumbnailWidth + 10,
-				ProfileInfoTopMargin:  10,
-				ProfileNameLeftMargin: 10,
-				ProfilePictureSize:    profilePictureSize,
-				LiveBadgeWidth:        int32(float32(screenWidth) * 0.08),
-				LiveBadgeHeight:       int32(float32(screenHeight) * 0.063),
-				LiveBadgeLeftMargin:   14,
-				LiveBadgeTopMargin:    11,
-				MaxTitleLength:        40,
-				TitleLeftMargin:       thumbnailWidth + 20,
-				TitleTopMargin:        profilePictureSize + 20,
+				Width:                   int32(float32(screenWidth) * 0.975),
+				Height:                  int32(float32(screenHeight) * 0.25),
+				ThumbnailWidth:          thumbnailWidth,
+				ThumbnailHeight:         int32(float32(screenHeight) * 0.24),
+				Padding:                 5,
+				ProfileInfoLeftMargin:   thumbnailWidth + 10,
+				ProfileInfoTopMargin:    10,
+				ProfileNameLeftMargin:   10,
+				ProfilePictureSize:      profilePictureSize,
+				LiveBadgeWidth:          int32(float32(screenWidth) * 0.08),
+				LiveBadgeHeight:         int32(float32(screenHeight) * 0.063),
+				LiveBadgeLeftMargin:     14,
+				LiveBadgeTopMargin:      11,
+				MaxTitleLength:          40,
+				TitleLeftMargin:         thumbnailWidth + 20,
+				TitleTopMargin:          profilePictureSize + 20,
+				FavoriteIconSize:        favoriteIconSize,
+				FavoriteIconTopMargin:   favoriteIconSize + 20,
+				FavoriteIconRightMargin: favoriteIconSize + 35,
 			},
 			HeaderHeight:      int32(float32(screenHeight) * 0.104),
 			FooterHeight:      int32(float32(screenHeight) * 0.083),
 			RowHeight:         130,
 			FontPath:          "font.ttf",
 			FontSize:          int(float32(screenHeight) * 0.040),
+			FooterFontSize:    int(float32(screenHeight) * 0.032),
 			Padding:           5,
 			StreamsTopMargin:  20,
 			StreamLeftMargin:  10,
@@ -185,6 +197,7 @@ func Load(screenWidth, screenHeight int) *Config {
 				StreamerNameTextColor:          sdl.Color{240, 249, 255, 255},
 				StreamTitleColor:               sdl.Color{148, 163, 184, 255},
 				SelectedStreamBorderColor:      sdl.Color{59, 130, 246, 255},
+				FavoriteIconColor:              sdl.Color{R: 255, G: 215, B: 0, A: 255},
 			},
 		},
 		Player: PlayerConfig{

@@ -1,27 +1,35 @@
 package app
 
 import (
+	"encoding/json"
 	"log"
+	"os"
 	"time"
 
+	"github.com/fspasovski/pocketstream-app/common"
 	"github.com/fspasovski/pocketstream-app/config"
 	"github.com/fspasovski/pocketstream-app/input"
 	"github.com/fspasovski/pocketstream-app/model"
+	"github.com/fspasovski/pocketstream-app/pocketstream"
 	"github.com/veandco/go-sdl2/sdl"
 	"github.com/veandco/go-sdl2/ttf"
 )
 
 type App struct {
-	Config      *config.Config
-	Running     bool
-	State       Screen
-	TopStreams  []model.Stream
-	Window      *sdl.Window
-	Renderer    *sdl.Renderer
-	Font        *ttf.Font
-	NeedsRedraw bool
-	IsLoading   bool
-	LoadingText string
+	Config              *config.Config
+	Running             bool
+	State               Screen
+	TopStreams          []model.Stream
+	Window              *sdl.Window
+	Renderer            *sdl.Renderer
+	Font                *ttf.Font
+	FooterFont          *ttf.Font
+	NeedsRedraw         bool
+	IsLoading           bool
+	LoadingText         string
+	UserDataManager     *UserDataManager
+	PocketstreamService *pocketstream.PocketstreamService
+	ImageDataService    *common.ImageDataService
 }
 
 func (a *App) LoadTopStreams() {
@@ -235,10 +243,10 @@ func (a *App) DrawFooter() error {
 	a.FillRect(&footerBg, a.Config.UI.Colors.FooterBackgroundColor)
 
 	// Draw button hint text
-	a.Font.SetStyle(ttf.STYLE_NORMAL)
-	hintText := "D-Pad: Navigate  |  A: Select  |  B: Back  |  X: Search"
+	a.FooterFont.SetStyle(ttf.STYLE_NORMAL)
+	hintText := "Navigate: ↑↓ | →: Favorites | A: Select | B: Back | Y: Favorite | X: Search"
 
-	hintSurface, err := a.Font.RenderUTF8Blended(hintText, a.Config.UI.Colors.FooterTextColor)
+	hintSurface, err := a.FooterFont.RenderUTF8Blended(hintText, a.Config.UI.Colors.FooterTextColor)
 	if err != nil {
 		return err
 	}
@@ -278,4 +286,94 @@ func (a *App) CreateTextureFromSurface(surface *sdl.Surface) (*sdl.Texture, erro
 
 func (a *App) CopyTexture(texture *sdl.Texture, src, dst *sdl.Rect) error {
 	return a.Renderer.Copy(texture, src, dst)
+}
+
+func (a *App) DrawLine(x1, y1, x2, y2 int32, color sdl.Color) {
+	a.Renderer.SetDrawColor(color.R, color.G, color.B, color.A)
+	a.Renderer.DrawLine(x1, y1, x2, y2)
+}
+
+type UserDataManager struct {
+	DataPath string
+	Data     UserData
+}
+
+type UserData struct {
+	FavoriteBroadcasters map[string]*model.Broadcaster
+}
+
+func LoadUserDataManager() *UserDataManager {
+	userData := UserData{FavoriteBroadcasters: make(map[string]*model.Broadcaster, 0)}
+	userDataManager := &UserDataManager{DataPath: "./userData.json", Data: userData}
+
+	if _, err := os.Stat(userDataManager.DataPath); os.IsNotExist(err) {
+		return userDataManager
+	}
+
+	data, err := os.ReadFile(userDataManager.DataPath)
+	if err != nil {
+		log.Printf("Failed to read user data file at: %v, err: %v", userDataManager.DataPath, err)
+	}
+
+	if len(data) == 0 {
+		return userDataManager
+	}
+
+	if err := json.Unmarshal(data, &userData); err != nil {
+		log.Printf("Failed to parse user data file at: %v, err: %v", userDataManager.DataPath, err)
+		return userDataManager
+	}
+
+	if userData.FavoriteBroadcasters == nil {
+		userData.FavoriteBroadcasters = make(map[string]*model.Broadcaster, 0)
+	}
+
+	userDataManager.Data = userData
+	return userDataManager
+}
+
+func (m *UserDataManager) ToggleFavoriteBroadcaster(broadcaster *model.Broadcaster) {
+	if m.Data.FavoriteBroadcasters[broadcaster.Login] != nil {
+		delete(m.Data.FavoriteBroadcasters, broadcaster.Login)
+	} else {
+		m.Data.FavoriteBroadcasters[broadcaster.Login] = &model.Broadcaster{
+			Id:              broadcaster.Id,
+			Login:           broadcaster.Login,
+			DisplayName:     broadcaster.DisplayName,
+			ProfileImageURL: broadcaster.ProfileImageURL,
+		}
+	}
+}
+
+func (m *UserDataManager) SaveData() {
+	data, err := json.MarshalIndent(m.Data, "", "  ")
+	if err != nil {
+		log.Printf("Failed to marshal user data: %v", err)
+		return
+	}
+
+	tempPath := m.DataPath + ".tmp"
+	if err := os.WriteFile(tempPath, data, 0644); err != nil {
+		log.Printf("Failed to write temporary data file: %v", err)
+		return
+	}
+
+	if err := os.Rename(tempPath, m.DataPath); err != nil {
+		log.Printf("Failed to rename temporary data file: %v", err)
+	}
+}
+
+func (m *UserDataManager) IsFavoriteBroadcaster(broadcaster *model.Broadcaster) bool {
+	return m.Data.FavoriteBroadcasters[broadcaster.Login] != nil
+}
+
+func (m *UserDataManager) GetBroadcasterImageUrl(login string) string {
+	if m.Data.FavoriteBroadcasters[login] != nil {
+		return m.Data.FavoriteBroadcasters[login].ProfileImageURL
+	}
+	return ""
+}
+
+func (m *UserDataManager) NoFavoriteBroadcasters() bool {
+	return len(m.Data.FavoriteBroadcasters) == 0
 }
