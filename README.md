@@ -1,5 +1,7 @@
 # 📺 Pocketstream
 
+[Website](https://pocketstream.app)
+
 **PocketStream** is a lightweight, open-source Twitch client written in **Go** with **SDL2**.  
 It lets you browse and watch live Twitch streams without needing to log in.
 
