@@ -14,47 +14,35 @@ type SearchChannelsEdgeImageResultDto struct {
 	Err               error
 }
 
-type GqlRequest struct {
+// GqlQueryRequest is used when sending a full GQL query string directly,
+// bypassing the persisted query mechanism. This is more resilient to Twitch
+// rotating their persisted query hashes or changing operation variable schemas.
+type GqlQueryRequest struct {
+	Query string `json:"query"`
+}
+
+// GqlPersistedRequest is used when sending a persisted (hashed) GQL operation.
+type GqlPersistedRequest struct {
 	OperationName string                `json:"operationName"`
-	Query         string                `json:"query"`
 	Variables     *GqlRequestVariables  `json:"variables"`
 	Extensions    *GqlRequestExtensions `json:"extensions"`
 }
 
 type GqlRequestVariables struct {
-	IsLive            bool               `json:"isLive"`
-	Login             string             `json:"login"`
-	PlayerType        string             `json:"playerType"`
-	ImageWidth        int                `json:"imageWidth"`
-	Limit             int                `json:"limit"`
-	PlatformType      string             `json:"platformType"`
-	Options           *GqlRequestOptions `json:"options"`
-	SortTypeIsRecency bool               `json:"sortTypeIsRecency"`
-	IncludeIsDJ       bool               `json:"includeIsDJ"`
-	Query             string             `json:"query"`
+	IsLive      bool   `json:"isLive"`
+	Login       string `json:"login"`
+	PlayerType  string `json:"playerType"`
+	IncludeIsDJ bool   `json:"includeIsDJ"`
+	Query       string `json:"query"`
 }
 
 type GqlRequestExtensions struct {
 	PersistedQuery *GqlRequestPersistedQuery `json:"persistedQuery"`
 }
 
-type GqlRequestOptions struct {
-	IncludeRestricted      []string                          `json:"includeRestricted"`
-	Sort                   string                            `json:"sort"`
-	FreeformTags           *string                           `json:"freeformTags"`
-	Tags                   []string                          `json:"tags"`
-	RecommendationsContext *GqlRequestRecommendationsContext `json:"recommendations_context"`
-	RequestId              string                            `json:"requestID"`
-	BroadcasterLanguages   []string                          `json:"broadcasterLanguages"`
-}
-
-type GqlRequestRecommendationsContext struct {
-	Platform string `json:"platform"`
-}
-
 type GqlRequestPersistedQuery struct {
-	Version    int
-	Sha256Hash string
+	Version    int    `json:"version"`
+	Sha256Hash string `json:"sha256Hash"`
 }
 
 type StreamingUrlGqlResponse struct {
@@ -71,26 +59,26 @@ type StreamPlaybackAccessToken struct {
 }
 
 type TopChannelsGqlResponse struct {
-	Data *TopChannelsDataGqlResponse
+	Data *TopChannelsDataGqlResponse `json:"data"`
 }
 
 type TopChannelsDataGqlResponse struct {
-	Streams *TopChannelsStreamsGqlResponse
+	Streams *TopChannelsStreamsGqlResponse `json:"streams"`
 }
 
 type TopChannelsStreamsGqlResponse struct {
-	Edges []*TopChannelsEdgeGqlResponse
+	Edges []*TopChannelsEdgeGqlResponse `json:"edges"`
 }
 
 type TopChannelsEdgeGqlResponse struct {
-	Node *TopChannelsNodeGqlResponse
+	Node *TopChannelsNodeGqlResponse `json:"node"`
 }
 
 type TopChannelsNodeGqlResponse struct {
 	Id              string                  `json:"id"`
 	Title           string                  `json:"title"`
 	ViewersCount    int                     `json:"viewersCount"`
-	PreviewImageURL string                  `json:"previewImageUrl"`
+	PreviewImageURL string                  `json:"previewImageURL"`
 	Broadcaster     *BroadcasterGqlResponse `json:"broadcaster"`
 }
 

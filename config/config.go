@@ -112,7 +112,7 @@ func Load(screenWidth, screenHeight int) *Config {
 
 	return &Config{
 		AppName:            "Pocketstream",
-		AppVersion:         "v1.1.0",
+		AppVersion:         "v1.1.1",
 		PocketstreamApiUrl: "https://pocketstream.app/api",
 		Display: DisplayConfig{
 			Width:  int32(screenWidth),
@@ -120,14 +120,13 @@ func Load(screenWidth, screenHeight int) *Config {
 		},
 		TwitchService: &twitch.TwitchService{
 			Config: twitch.TwitchConfig{
-				ClientId:               "kimne78kx3ncx6brgo4mv6wki5h1ko",
-				GqlUrl:                 "https://gql.twitch.tv/gql",
-				UsherUrl:               "https://usher.ttvnw.net/api/channel/hls",
-				TopStreamsLimit:        10,
-				HttpClient:             &http.Client{},
-				StreamResolution:       "RESOLUTION=852x480",
-				BrowsPagePopularSha256: "75a4899f0a765cc08576125512f710e157b147897c06f96325de72d4c5a64890",
-				SearchResultsSha256:    "845698a3efbde3c2d1cc31e77ca1160cde6a21c556ad808106910ff63e727b98",
+				ClientId:            "kimne78kx3ncx6brgo4mv6wki5h1ko",
+				GqlUrl:              "https://gql.twitch.tv/gql",
+				UsherUrl:            "https://usher.ttvnw.net/api/channel/hls",
+				TopStreamsLimit:     10,
+				HttpClient:          &http.Client{},
+				StreamResolution:    "RESOLUTION=852x480",
+				SearchResultsSha256: "845698a3efbde3c2d1cc31e77ca1160cde6a21c556ad808106910ff63e727b98",
 			},
 		},
 		UI: UIConfig{

@@ -14,14 +14,38 @@ import (
 )
 
 type TwitchConfig struct {
-	ClientId               string
-	GqlUrl                 string
-	UsherUrl               string
-	StreamResolution       string
-	TopStreamsLimit        int
-	HttpClient             *http.Client
-	BrowsPagePopularSha256 string
-	SearchResultsSha256    string
+	ClientId            string
+	GqlUrl              string
+	UsherUrl            string
+	StreamResolution    string
+	TopStreamsLimit     int
+	HttpClient          *http.Client
+	SearchResultsSha256 string
+}
+
+// gqlErrorEnvelope is used to detect API-level errors in a GQL response body
+// before attempting to parse the data payload.
+type gqlErrorEnvelope struct {
+	Errors []struct {
+		Message string `json:"message"`
+	} `json:"errors"`
+}
+
+// checkGQLErrors returns a non-nil error if the response body contains a
+// top-level "errors" array. It does not consume the body bytes.
+func checkGQLErrors(body []byte) error {
+	var env gqlErrorEnvelope
+	if err := json.Unmarshal(body, &env); err != nil {
+		return nil // not parseable as an error envelope; let the caller handle it
+	}
+	if len(env.Errors) == 0 {
+		return nil
+	}
+	msgs := make([]string, 0, len(env.Errors))
+	for _, e := range env.Errors {
+		msgs = append(msgs, e.Message)
+	}
+	return fmt.Errorf("twitch GQL error: %s", strings.Join(msgs, "; "))
 }
 
 type TwitchService struct {
@@ -61,8 +85,17 @@ func (s *TwitchService) GetTopStreams() ([]model.Stream, error) {
 	var parsedResponse TopChannelsGqlResponse
 	e := json.Unmarshal(gqlBody, &parsedResponse)
 	if e != nil {
-		fmt.Println("Error parsing gql response:", err)
+		fmt.Println("Error parsing gql response:", e)
 		return nil, e
+	}
+
+	if err := checkGQLErrors(gqlBody); err != nil {
+		fmt.Println("GQL API error:", err)
+		return nil, err
+	}
+
+	if parsedResponse.Data == nil || parsedResponse.Data.Streams == nil {
+		return nil, fmt.Errorf("unexpected empty response from Twitch: data.streams is nil")
 	}
 
 	topStreams := make([]model.Stream, 0, len(parsedResponse.Data.Streams.Edges))
@@ -136,8 +169,17 @@ func (s *TwitchService) SearchStreams(searchValue string) ([]model.Stream, error
 	var parsedResponse SearchStreamsGqlResponse
 	e := json.Unmarshal(gqlBody, &parsedResponse)
 	if e != nil {
-		fmt.Println("Error parsing gql response:", err)
+		fmt.Println("Error parsing gql response:", e)
 		return nil, e
+	}
+
+	if err := checkGQLErrors(gqlBody); err != nil {
+		fmt.Println("GQL API error:", err)
+		return nil, err
+	}
+
+	if parsedResponse.Data == nil || parsedResponse.Data.SearchFor == nil || parsedResponse.Data.SearchFor.Channels == nil {
+		return nil, fmt.Errorf("unexpected empty response from Twitch: data.searchFor.channels is nil")
 	}
 
 	streams := make([]model.Stream, 0)
@@ -185,23 +227,27 @@ func getSearchChannelsImageDataFromUrl(edge *SearchStreamsEdgeGqlResponse, wg *s
 	profileImageResp, err := http.Get(edge.Item.ProfileImageURL)
 	if err != nil {
 		results <- SearchChannelsEdgeImageResultDto{Edge: edge, Err: err}
+		return
 	}
 	defer profileImageResp.Body.Close()
 
 	data, err := io.ReadAll(profileImageResp.Body)
 	if err != nil {
 		results <- SearchChannelsEdgeImageResultDto{Edge: edge, Err: err}
+		return
 	}
 
 	previewImageResp, err := http.Get(edge.Item.Stream.PreviewImageURL)
 	if err != nil {
 		results <- SearchChannelsEdgeImageResultDto{Edge: edge, Err: err}
+		return
 	}
-	defer profileImageResp.Body.Close()
+	defer previewImageResp.Body.Close()
 
 	previewImageData, err := io.ReadAll(previewImageResp.Body)
 	if err != nil {
 		results <- SearchChannelsEdgeImageResultDto{Edge: edge, Err: err}
+		return
 	}
 
 	results <- SearchChannelsEdgeImageResultDto{Edge: edge, Bytes: data, PreviewImageBytes: previewImageData}
@@ -213,23 +259,30 @@ func getImageDataFromUrl(edge *TopChannelsEdgeGqlResponse, wg *sync.WaitGroup, r
 	resp, err := http.Get(edge.Node.Broadcaster.ProfileImageURL)
 	if err != nil {
 		results <- TopChannelEdgeImageResultDto{Edge: edge, Err: err}
+		return
 	}
 	defer resp.Body.Close()
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		results <- TopChannelEdgeImageResultDto{Edge: edge, Err: err}
+		return
 	}
 
-	previewImageResp, err := http.Get(edge.Node.PreviewImageURL)
+	// previewImageURL contains {width}x{height} placeholders; substitute a
+	// concrete size (440×248 ≈ 16:9 at a comfortable resolution for the UI).
+	previewURL := strings.NewReplacer("{width}", "440", "{height}", "248").Replace(edge.Node.PreviewImageURL)
+	previewImageResp, err := http.Get(previewURL)
 	if err != nil {
 		results <- TopChannelEdgeImageResultDto{Edge: edge, Err: err}
+		return
 	}
-	defer resp.Body.Close()
+	defer previewImageResp.Body.Close()
 
 	previewImageData, err := io.ReadAll(previewImageResp.Body)
 	if err != nil {
 		results <- TopChannelEdgeImageResultDto{Edge: edge, Err: err}
+		return
 	}
 
 	results <- TopChannelEdgeImageResultDto{Edge: edge, Bytes: data, PreviewImageBytes: previewImageData}
@@ -286,9 +339,10 @@ func (s *TwitchService) getStreamingUrlGqlResponse(channel string) (*StreamingUr
 }
 
 func getStreamingLinkGqlRequest(channel string) (*bytes.Buffer, error) {
-	gqlRequest := &GqlRequest{
+	// The PlaybackAccessToken operation is sent as a persisted request with its
+	// operation name and variables; Twitch's GQL endpoint resolves it server-side.
+	gqlRequest := &GqlPersistedRequest{
 		OperationName: "PlaybackAccessToken",
-		Query:         "query PlaybackAccessToken($login: String!, $isLive: Boolean!, $playerType: String!) { streamPlaybackAccessToken(channelName: $login, params: {platform: \"web\", playerBackend: \"mediaplayer\", playerType: $playerType}) @include(if: $isLive) { value signature } }",
 		Variables: &GqlRequestVariables{
 			IsLive:     true,
 			Login:      channel,
@@ -296,8 +350,20 @@ func getStreamingLinkGqlRequest(channel string) (*bytes.Buffer, error) {
 		},
 	}
 
-	gqlRequestJson, err := json.Marshal(gqlRequest)
+	// Attach the inline query as well; the endpoint accepts both forms and some
+	// Twitch GQL paths require it for the PlaybackAccessToken operation.
+	type playbackRequest struct {
+		OperationName string               `json:"operationName"`
+		Query         string               `json:"query"`
+		Variables     *GqlRequestVariables `json:"variables"`
+	}
+	fullRequest := &playbackRequest{
+		OperationName: gqlRequest.OperationName,
+		Query:         "query PlaybackAccessToken($login: String!, $isLive: Boolean!, $playerType: String!) { streamPlaybackAccessToken(channelName: $login, params: {platform: \"web\", playerBackend: \"mediaplayer\", playerType: $playerType}) @include(if: $isLive) { value signature } }",
+		Variables:     gqlRequest.Variables,
+	}
 
+	gqlRequestJson, err := json.Marshal(fullRequest)
 	if err != nil {
 		fmt.Println("Error:", err)
 		return nil, err
@@ -337,38 +403,41 @@ func (s *TwitchService) parseStreamUrlFromUsherResponse(response string) string 
 }
 
 func (s *TwitchService) getTopChannelsGqlRequest(limit int) (*bytes.Buffer, error) {
-	gqlRequest := &GqlRequest{
-		OperationName: "BrowsePage_Popular",
-		Variables: &GqlRequestVariables{
-			ImageWidth:   50,
-			Limit:        limit,
-			PlatformType: "all",
-			Options: &GqlRequestOptions{
-				IncludeRestricted: []string{"SUB_ONLY_LIVE"},
-				Sort:              "VIEWER_COUNT",
-				FreeformTags:      nil,
-				Tags:              []string{},
-				RecommendationsContext: &GqlRequestRecommendationsContext{
-					Platform: "web",
-				},
-				RequestId:            "pocketstream-app",
-				BroadcasterLanguages: []string{},
-			},
-			SortTypeIsRecency: false,
-			IncludeIsDJ:       true,
-		},
-		Extensions: &GqlRequestExtensions{
-			PersistedQuery: &GqlRequestPersistedQuery{
-				Version:    1,
-				Sha256Hash: s.Config.BrowsPagePopularSha256,
-			},
-		},
-	}
+	// Send a full GQL query string instead of a persisted (hashed) operation.
+	// Persisted queries require a SHA-256 hash that Twitch rotates when they
+	// update their schema; the hash in use also must exactly match the variable
+	// shape Twitch currently expects (e.g. they removed recommendations_context
+	// from StreamOptions). Sending the query inline avoids both problems and is
+	// fully supported by the public endpoint used by Twitch's own web client.
+	//
+	// The previewImageUrl template field {width}x{height} is filled with a
+	// concrete size; browsers use ~852×480 for standard thumbnails.
+	// previewImageURL returns a template string with {width}x{height} placeholders
+	// that must be substituted client-side; the field takes no GQL arguments.
+	query := fmt.Sprintf(`{
+		streams(first: %d) {
+			edges {
+				node {
+					id
+					title
+					viewersCount
+					previewImageURL
+					broadcaster {
+						id
+						login
+						displayName
+						profileImageURL(width: 50)
+					}
+				}
+			}
+		}
+	}`, limit)
+
+	gqlRequest := &GqlQueryRequest{Query: query}
 
 	gqlRequestJson, err := json.Marshal(gqlRequest)
-
 	if err != nil {
-		fmt.Println("Error:", err)
+		fmt.Println("Error marshalling GQL request:", err)
 		return nil, err
 	}
 
@@ -376,7 +445,7 @@ func (s *TwitchService) getTopChannelsGqlRequest(limit int) (*bytes.Buffer, erro
 }
 
 func (s *TwitchService) getSearchChannelsGqlRequest(searchValue *string) (*bytes.Buffer, error) {
-	gqlRequest := &GqlRequest{
+	gqlRequest := &GqlPersistedRequest{
 		OperationName: "SearchResultsPage_SearchResults",
 		Variables: &GqlRequestVariables{
 			Query:       *searchValue,
